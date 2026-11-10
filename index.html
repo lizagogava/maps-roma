@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Map - Rome, Italy</title>
+
+    <!-- 1. Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        /* General Layout */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Map Container (Left) */
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+
+        /* Sidebar Panel (Right) */
+        #sidebar {
+            width: 360px;
+            background-color: #ffffff;
+            border-left: 1px solid #e0e0e0;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.08);
+            overflow-y: auto;
+        }
+
+        #sidebar h2 {
+            color: #1a1a1a;
+            font-size: 22px;
+            border-bottom: 2px solid #ce2b37; /* Italian red accent */
+            padding-bottom: 8px;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: fit-content;
+        }
+
+        .cat-history { background-color: #c0392b; }
+        .cat-religion { background-color: #8e44ad; }
+        .cat-culture { background-color: #27ae60; }
+
+        #details-content {
+            line-height: 1.6;
+            color: #4a4a4a;
+            font-size: 15px;
+        }
+
+        .placeholder-text {
+            color: #888888;
+            font-style: italic;
+        }
+
+        /* Custom Marker Icon Styles */
+        .custom-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-size: 16px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .icon-history { background-color: #c0392b; }
+        .icon-religion { background-color: #8e44ad; }
+        .icon-culture { background-color: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Right Sidebar Information Panel -->
+    <div id="sidebar">
+        <h2 id="info-title">Select a Landmark</h2>
+        <div id="info-category"></div>
+        <div id="details-content">
+            <p class="placeholder-text">Click on any marker on the map to display its details here.</p>
+        </div>
+    </div>
+
+    <!-- 2. Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 3. Initialize Map (Centered on Rome, Zoom: 13)
+        const map = L.map('map').setView([41.9028, 12.4964], 13);
+
+        // Add OpenStreetMap Tile Layer
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // 4. Define 3 Custom Icon Categories
+        const historyIcon = L.divIcon({
+            className: 'custom-icon icon-history',
+            html: '🏛️',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+            popupAnchor: [0, -17]
+        });
+
+        const religionIcon = L.divIcon({
+            className: 'custom-icon icon-religion',
+            html: '⛪',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+            popupAnchor: [0, -17]
+        });
+
+        const cultureIcon = L.divIcon({
+            className: 'custom-icon icon-culture',
+            html: '🎨',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+            popupAnchor: [0, -17]
+        });
+
+        // 5. Data Array: 10 Landmark Locations in Rome
+        const locations = [
+            {
+                name: "Colosseum",
+                coords: [41.8902, 12.4922],
+                category: "History",
+                categoryClass: "cat-history",
+                icon: historyIcon,
+                description: "The iconic ancient amphitheater built under the Flavian dynasty, famous for gladiator contests and public spectacles."
+            },
+            {
+                name: "Pantheon",
+                coords: [41.8986, 12.4769],
+                category: "History",
+                categoryClass: "cat-history",
+                icon: historyIcon,
+                description: "A former Roman temple now serving as a church, renowned for its massive unreinforced concrete dome and oculus."
+            },
+            {
+                name: "Roman Forum",
+                coords: [41.8925, 12.4853],
+                category: "History",
+                categoryClass: "cat-history",
+                icon: historyIcon,
+                description: "A rectangular plaza surrounded by the ruins of several important ancient government buildings at the center of ancient Rome."
+            },
+            {
+                name: "St. Peter's Basilica",
+                coords: [41.9022, 12.4539],
+                category: "Religion",
+                categoryClass: "cat-religion",
+                icon: religionIcon,
+                description: "Located within Vatican City, this Renaissance-style church is one of the largest and most sacred Catholic shrines in the world."
+            },
+            {
+                name: "Trevi Fountain",
+                coords: [41.9009, 12.4833],
+                category: "Culture & Parks",
+                categoryClass: "cat-culture",
+                icon: cultureIcon,
+                description: "Rome's largest and most famous Baroque fountain, tradition holds that tossing a coin over your shoulder ensures a return to Rome."
+            },
+            {
+                name: "Spanish Steps",
+                coords: [41.9060, 12.4828],
+                category: "Culture & Parks",
+                categoryClass: "cat-culture",
+                icon: cultureIcon,
+                description: "A monumental stairway of 135 steps climbing a steep slope between the Piazza di Spagna at the base and Piazza Trinità dei Monti."
+            },
+            {
+                name: "Piazza Navona",
+                coords: [41.8992, 12.4731],
+                category: "Culture & Parks",
+                categoryClass: "cat-culture",
+                icon: cultureIcon,
+                description: "A vibrant city square built on the site of the 1st century AD Stadium of Domitian, featuring Bernini's famous Fountain of the Four Rivers."
+            },
+            {
+                name: "Castel Sant'Angelo",
+                coords: [41.9031, 12.4663],
+                category: "History",
+                categoryClass: "cat-history",
+                icon: historyIcon,
+                description: "Originally commissioned by Emperor Hadrian as a mausoleum, this towering fortress was later used by popes as a castle and refuge."
+            },
+            {
+                name: "Villa Borghese",
+                coords: [41.9142, 12.4921],
+                category: "Culture & Parks",
+                categoryClass: "cat-culture",
+                icon: cultureIcon,
+                description: "A landscape garden containing several museums, including the Borghese Gallery with masterpieces by Bernini and Caravaggio."
+            },
+            {
+                name: "Basilica of St. John Lateran",
+                coords: [41.8859, 12.5057],
+                category: "Religion",
+                categoryClass: "cat-religion",
+                icon: religionIcon,
+                description: "The official cathedral seat of the Bishop of Rome (the Pope) and the oldest public church in the city."
+            }
+        ];
+
+        // 6. Loop through array, add markers to map, and set up event listeners
+        locations.forEach(loc => {
+            // Create marker with custom category icon
+            const marker = L.marker(loc.coords, { icon: loc.icon }).addTo(map);
+
+            // Bind quick popup
+            marker.bindPopup(`<b>${loc.name}</b>`);
+
+            // Click event to update sidebar details
+            marker.on('click', () => {
+                document.getElementById('info-title').innerText = loc.name;
+                
+                document.getElementById('info-category').innerHTML = `
+                    <span class="category-badge ${loc.categoryClass}">${loc.category}</span>
+                `;
+
+                document.getElementById('details-content').innerHTML = `
+                    <p>${loc.description}</p>
+                    <br>
+                    <small style="color: #777; font-family: monospace;">📍 Coordinates: ${loc.coords[0]}, ${loc.coords[1]}</small>
+                `;
+
+                // Smoothly zoom/fly to marker
+                map.flyTo(loc.coords, 15, {
+                    duration: 1.2
+                });
+            });
+        });
+    </script>
+</body>
+</html>
